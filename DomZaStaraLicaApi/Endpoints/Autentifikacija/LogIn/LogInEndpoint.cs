@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DomZaStaraLicaApi.Endpoints.Autentifikacija.LogIn
 {
+    [Route("/login")]
     public class LogInEndpoint : MyBaseEndpoint<LoginRequest, LogInResponse>
     {
         private readonly ApplicationDbContext _applicationDbContext;
@@ -13,11 +14,11 @@ namespace DomZaStaraLicaApi.Endpoints.Autentifikacija.LogIn
         {
             _applicationDbContext = applicationDbContext;
         }
-        [HttpPost("/login")]
-        public override async Task<LogInResponse> Obradi(LoginRequest request)
+        [HttpPost]
+        public override async Task<LogInResponse> Obradi([FromBody] LoginRequest request)
         {
 
-           var logiraniKorisnik=_applicationDbContext.KorisnickiNalog.FirstOrDefault(
+           var logiraniKorisnik= _applicationDbContext.KorisnickiNalog.FirstOrDefault(
                x=> x.KorisnickoIme==request.KorisnickoIme
                && x.JeAdmin==request.JeAdmin && x.JeFizioterapeut==request.JeFizioterapeut
                && x.JeDoktor==request.JeDoktor && x.JeNjegovatelj==request.JeNjegovatelj &&
