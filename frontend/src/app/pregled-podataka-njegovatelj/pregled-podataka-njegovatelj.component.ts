@@ -21,11 +21,13 @@ import {NjegovateljiService} from "../Services/NjegovateljService";
 import {KorisnickiNalogService} from "../Services/KorisnickiNalogService";
 import {PoslovnaPozicijaService} from "../Services/PoslovnaPozicijaService";
 import {PasswordService} from "../Services/PasswordService";
+import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
+import {NavBarNjejgovateljComponent} from "../nav-bar-njejgovatelj/nav-bar-njejgovatelj.component";
 
 @Component({
   selector: 'app-pregled-podataka-njegovatelj',
   standalone: true,
-  imports: [CommonModule, FormsModule,HttpClientModule],
+  imports: [CommonModule, FormsModule, HttpClientModule, FontAwesomeModule, NavBarNjejgovateljComponent],
   providers: [NjegovateljiService,KorisnickiNalogService,PoslovnaPozicijaService,PasswordService],
   templateUrl: './pregled-podataka-njegovatelj.component.html',
   styleUrl: './pregled-podataka-njegovatelj.component.css'
@@ -107,11 +109,13 @@ export class PregledPodatakaNjegovateljComponent {
 
     this.requestLozinka.korisnickiNalogId=this.getNjegovatelj()?.nalogId || 0;
     this.requestLozinka.lozinka=this.staraLozinka;
+    console.log(this.staraLozinka)
     this.passwordService.ProvjeriPassword(this.requestLozinka).subscribe(response => {
 
       if(response.jeIspravno)
       {
         this.showErrorNePostojiNalog=false;
+        console.log(this.showProvjeraLozinkeZaLozinku);
         if(this.showProvjeraLozinkeZaLozinku) {
           this.showPromijeniLozinku=true;
         }
@@ -130,10 +134,15 @@ export class PregledPodatakaNjegovateljComponent {
 
   PromijeniLozinku() {
     this.prikaziDialog=true;
+    this.showProvjeraLozinkeZaLozinku=true;
+    this.showPromijeniLozinku=false;
+    this.showPromijeniNalog=false;
+    this.showProvjeraLozinkeZaNalog=false;
   }
 
   lozicnkeNotMatching:boolean=false;
   emptyKorIme:boolean=false;
+  uspjesnoPromijenjeniPodaci: boolean=false;
   ProvjeraIPromjenaLozinke() {
 
     if(this.showProvjeraLozinkeZaLozinku) {
@@ -141,7 +150,9 @@ export class PregledPodatakaNjegovateljComponent {
         this.lozicnkeNotMatching=false;
         this.korisnickiNalog.lozinka = this.novaLozinka;
         this.korisnickiNalogService.UpdateKorisnickiNalog(this.korisnickiNalog).subscribe(x => {})
+        this.uspjesnoPromijenjeniPodaci=true;
         this.SveFalse();
+
       }
       else{
         this.lozicnkeNotMatching=true;
@@ -184,5 +195,13 @@ export class PregledPodatakaNjegovateljComponent {
   Otkazi() {
     this.prikaziDialog=false;
     this.SveFalse();
+  }
+
+  PromijeniKorIme() {
+    this.showProvjeraLozinkeZaNalog=true;
+    this.showPromijeniNalog=false;
+    this.prikaziDialog=true;
+    this.showProvjeraLozinkeZaLozinku=false;
+    this.showPromijeniLozinku=false;
   }
 }

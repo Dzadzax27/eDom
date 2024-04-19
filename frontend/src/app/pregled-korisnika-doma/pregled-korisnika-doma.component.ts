@@ -11,17 +11,28 @@ import {OpsinaGetAllResponseOpstina, OpstinaGetAllResponse} from "../opstina/ops
 import {map, Observable} from "rxjs";
 import {KorisnikComponent} from "../korisnik/korisnik.component";
 import {Router} from "@angular/router";
+import {NavBarNjejgovateljComponent} from "../nav-bar-njejgovatelj/nav-bar-njejgovatelj.component";
+import {MyAuthService} from "../Services/MyAuthService";
+import {NavBarNutricionistaComponent} from "../nav-bar-nutricionista/nav-bar-nutricionista.component";
+import {SignalRService} from "../Services/signalR.service";
+import {NotifikacijaResponse, NotifikacijaResponseNotifikacija} from "../Services/notifikacijaRequest";
+import {faBell, faEye, faEyeSlash} from "@fortawesome/free-solid-svg-icons";
+import {FaIconComponent} from "@fortawesome/angular-fontawesome";
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome'
+
 
 @Component({
   selector: 'app-pregled-korisnika-doma',
   standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, NavBarNjejgovateljComponent, NavBarNutricionistaComponent, FaIconComponent,FontAwesomeModule],
+  providers:[MyAuthService,SignalRService],
   templateUrl: './pregled-korisnika-doma.component.html',
   styleUrl: './pregled-korisnika-doma.component.css'
 })
 export class PregledKorisnikaDomaComponent implements  OnInit{
-  constructor(public httpClient:HttpClient, private dialog: MatDialog,public router: Router) {
-  }
+
+  constructor(public httpClient:HttpClient, private dialog: MatDialog,public router: Router
+  , private _myAuthService:MyAuthService, private signalRService: SignalRService) {}
 
   public korisnikUpdateRequest: KorisnikDomaUpdateRequest ={
     korisnikDomaID:0,
@@ -32,13 +43,27 @@ export class PregledKorisnikaDomaComponent implements  OnInit{
     opstinaID:0
 
   }
+  public hasNewNotification: boolean = false;
+  obavijetUkljucena:boolean=false;
   pretragaNaziv="";
   korisnici:KorisnikDomaGetAllResponseKorisnik[]=[];
   public odabraniKorisnik: KorisnikDomaUpdateRequest | null=null;
   options:OpsinaGetAllResponseOpstina[]=[];
   forma: any;
-
+  jeNjegovatelj=false;
+  jeNutricionista=false;
+  jeDoktor=false;
+  public notification2="";
   ngOnInit(): void {
+    if(this._myAuthService.jeNjegovatelj())
+    {
+      this.jeNjegovatelj=true;
+    }else if (this._myAuthService.jeNutricionista()) {
+      this.jeNutricionista=true;
+    }else if(this._myAuthService.jeDoktor())
+    {
+      this.jeDoktor=true;
+    }
     let url =MyConfig.adresa_servera +`/korisnikDoma-getAll`
     this.httpClient.get<KorisnikDomaGetAllResponse>(url).subscribe((x:KorisnikDomaGetAllResponse)=>{
       this.korisnici = x.korisnici;
@@ -47,6 +72,9 @@ export class PregledKorisnikaDomaComponent implements  OnInit{
   getFiltriraniKorisnici() {
     return this.korisnici.filter(x=>(x.imePrezime.toLowerCase()).startsWith(this.pretragaNaziv.toLowerCase()))
   }
+
+    public obavijesti: any;
+
 
   ObrisiKorisnika(data: KorisnikDomaGetAllResponseKorisnik) {
     const dialogRef:MatDialogRef<WarningDialogComponent, boolean>=this.openWarningDialog('Da li ste sigurni da želite izbrisati opštinu?');
@@ -111,6 +139,16 @@ export class PregledKorisnikaDomaComponent implements  OnInit{
     );
   }
 
+
+  PrikaziNapomene(item: KorisnikDomaGetAllResponseKorisnik) {
+    this.router.navigate(['/pregledNapomena', item.korisnikDomaID]);
+
+  }
+
+  PrikaziAktivneNapomene(item: KorisnikDomaGetAllResponseKorisnik) {
+    this.router.navigate(['/pregledAktivnihNapomena', item.korisnikDomaID]);
+  }
+
   PregledZadataka(item: KorisnikDomaGetAllResponseKorisnik) {
     this.router.navigate(['/pregleddnevnihzadataka', item.korisnikDomaID]);
   }
@@ -121,9 +159,17 @@ export class PregledKorisnikaDomaComponent implements  OnInit{
 
   PregledArhiveZadataka(item: KorisnikDomaGetAllResponseKorisnik) {
     this.router.navigate(['/pregledarhivezadataka', item.korisnikDomaID]);
+
   }
 
   DodajPlanIshrane(item: KorisnikDomaGetAllResponseKorisnik) {
     this.router.navigate(['/dodajplanishrane', item.korisnikDomaID]);
   }
+
+
+  protected readonly MyConfig = MyConfig;
+  jeAdmin: any;
+    protected readonly faEye = faEye;
+    protected readonly faEyeSlash = faEyeSlash;
+    protected readonly faBell = faBell;
 }

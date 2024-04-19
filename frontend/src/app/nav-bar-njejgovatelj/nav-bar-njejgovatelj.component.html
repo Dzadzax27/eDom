@@ -1,0 +1,32 @@
+<header>
+  <nav class="navbar">
+    <div class="logo">
+      <fa-icon [icon]="faBell" [ngClass]="{ 'text-danger': hasNewNotification }" [size]="'2x'" (click)="markNotificationAsRead()"></fa-icon>
+      <div class="dropdown-content" *ngIf="obavijetUkljucena">
+        <table class="table table-striped">
+          <thead>
+          <tr>
+            <th>Obavijesti</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let item of obavijesti">
+            <td>{{ item.poruka }}</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <ul class="nav-links ">
+      <li><a (click)="IdiPocetna()">Odjavi se</a></li>
+      <li><a (click)="IdiPregledKorisnika()">Pacijenti</a></li>
+      <li class="Zadaci"><a (click)="IdiDodajZadatke()"> Dodaj Zadatke</a></li>
+      <li class="Napomene"><a >Napomene</a></li>
+    </ul>
+
+    <div class="profile" (click)="PregledOMeni()">
+      <span class="far fa-user"></span>
+    </div>
+  </nav>
+
+</header>

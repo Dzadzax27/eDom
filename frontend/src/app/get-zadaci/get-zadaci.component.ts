@@ -13,12 +13,14 @@ import {DodajZadatakResponse} from "./DodajZadatakResponse";
 import {finalize} from "rxjs";
 import {ActivatedRoute} from "@angular/router";
 import {ZadaciService} from "../Services/ZadaciService";
+import {NavBarNjejgovateljComponent} from "../nav-bar-njejgovatelj/nav-bar-njejgovatelj.component";
+import {SignalRService} from "../Services/signalR.service";
 
 @Component({
   selector: 'app-get-zadaci',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  providers: [ZadaciService],
+    imports: [CommonModule, FormsModule, NavBarNjejgovateljComponent],
+  providers: [ZadaciService,SignalRService],
   templateUrl: './get-zadaci.component.html',
   styleUrl: './get-zadaci.component.css'
 })
@@ -29,25 +31,41 @@ export class GetZadaciComponent {
   ,private dialog: MatDialog,private route: ActivatedRoute,
               private zadaciService:ZadaciService) {
   }
+  jeNjegovatelj:boolean=false;
+  jeDoktor:boolean=false;
+  jeFizijatar:boolean=false;
   ngOnInit(){
-
-    this.zadaciService.GetVrsteZadataka().subscribe(response=>{
+    if(this._myAuthService.jeNjegovatelj())
+    {
+      this.jeNjegovatelj=true;
+    }else if (this._myAuthService.jeFizioterapeut()) {
+      this.jeFizijatar=true;
+    }else if(this._myAuthService.jeDoktor())
+    {
+      this.jeDoktor=true;
+    }
+      this.zadaciService.GetVrsteZadataka().subscribe(response=>{
       this.OpstiZadatakId=response.vrsteZadatka.find(x=>x.naziv==="Opsti zadatak")?.vrstaZadatkaId??0;
       this.dodajOpstiZadatak.vrstaZadatkaId=response.vrsteZadatka.find(x=>x.naziv==="Opsti zadatak")?.vrstaZadatkaId??0;
       this.updateOpstiZadatak.vrstaZadatkaId=response.vrsteZadatka.find(x=>x.naziv==="Opsti zadatak")?.vrstaZadatkaId??0;
+      this.MedicinskiZadatakId=response.vrsteZadatka.find(x=>x.naziv==="Medicinski zadatak")?.vrstaZadatkaId??0;
+        this.FizijatrijskiZadatakId=response.vrsteZadatka.find(x=>x.naziv==="Fizijatrijski zadatak")?.vrstaZadatkaId??0;
+
+        this.GetAllZadaci();
     })
     this.zadaciService.GetVrsteZadataka().subscribe(response=>{
-      this.MedicinskiZadatakId=response.vrsteZadatka.find(x=>x.naziv==="Medicinski zadatak")?.vrstaZadatkaId??0;
+
     });
     this.zadaciService.GetVrsteZadataka().subscribe(response=>{
-      this.FizijatrijskiZadatakId=response.vrsteZadatka.find(x=>x.naziv==="Fizijatrijski zadatak")?.vrstaZadatkaId??0;
+
     });
     this.zadaciService.GetIntervalZadataka().subscribe(response=>{
       this.dodajOpstiZadatak.intervalZadatkaId=response.intervaliZadatka.find(x=>x.jeDnevni===true)?.intervalZadatkaId??0;
       this.updateOpstiZadatak.intervalZadatkaId=response.intervaliZadatka.find(x=>x.jeDnevni===true)?.intervalZadatkaId??0;
       this.DnevniZadatakId=response.intervaliZadatka.find(x=>x.jeDnevni===true)?.intervalZadatkaId??0;
 })
-    this.GetAllZadaci();
+
+
     this.njegovatelj=this.getZaposlenik();
     this.route.params.subscribe(params => {
       this._korisnikDomaId = +params['id'] || 0;
@@ -90,6 +108,28 @@ export class GetZadaciComponent {
     vrstaZadatkaId:0,
     korisnikDomaId:0
   }
+  public updateMedicinskiZadatak:GetAllZadatakResponseZadatak={
+    zadatakId:0,
+    opis:"",
+    status:false,
+    datumPostavke:new Date(),
+    zaposlenikPostavioId: 0,
+    zaposlenikEditovaoId:null,
+    intervalZadatkaId:0,
+    vrstaZadatkaId:0,
+    korisnikDomaId:0
+  }
+  public updateFizijatrijskiZadatak:GetAllZadatakResponseZadatak={
+    zadatakId:0,
+    opis:"",
+    status:false,
+    datumPostavke:new Date(),
+    zaposlenikPostavioId: 0,
+    zaposlenikEditovaoId:null,
+    intervalZadatkaId:0,
+    vrstaZadatkaId:0,
+    korisnikDomaId:0
+  }
   GetAllMedicinskiZadaci() {
     this.medicinskiZadatak= this.zadaci.filter(x=>x.vrstaZadatkaId===this.MedicinskiZadatakId)
     this.showOpsti=false;
@@ -103,13 +143,11 @@ export class GetZadaciComponent {
     this.showMedicinski=false;
   }
   GetAllOpstiZadaci() {
-    console.log("Opsti zadatak iD",this.OpstiZadatakId);
-    console.log(this.zadaci);
-    this.opstiZadatak= this.zadaci.filter(x=>x.vrstaZadatkaId===this.OpstiZadatakId &&
-    x.korisnikDomaId===this._korisnikDomaId)
+
     this.showOpsti=true;
     this.showFizijatrijski=false;
     this.showMedicinski=false;
+    this.showDodajOpstiZadatak=true;
   }
 
     getZaposlenik():GetAllNjegovateljaResponseNjegovatelj | null {
@@ -123,7 +161,6 @@ export class GetZadaciComponent {
     }
    GetAllZadaci() {
     let todayDate=new Date(this.odabraniDatum);
-
     this.zadaciService.GetAllZadaci().subscribe(x => {
 
       this.zadaci = x.zadaci.filter(zadatak => {
@@ -140,7 +177,19 @@ export class GetZadaciComponent {
           return false;
         }
       });
-      console.log("Zadaci",this.zadaci);
+      this.opstiZadatak = this.zadaci.filter(zadatak =>
+        zadatak.vrstaZadatkaId === this.OpstiZadatakId &&
+        zadatak.korisnikDomaId === this._korisnikDomaId
+      );
+      this.medicinskiZadatak= this.zadaci.filter(zadatak =>
+        zadatak.vrstaZadatkaId === this.MedicinskiZadatakId &&
+        zadatak.korisnikDomaId === this._korisnikDomaId
+      );
+      this.fizijatrijskiZadatak= this.zadaci.filter(zadatak =>
+        zadatak.vrstaZadatkaId === this.FizijatrijskiZadatakId &&
+        zadatak.korisnikDomaId === this._korisnikDomaId
+      );
+      console.log("Zadaci:", this.zadaci, "Opsti zadaci:", this.opstiZadatak,"Medicinski", this.medicinskiZadatak,this.MedicinskiZadatakId,this.OpstiZadatakId);
     })
   }
   getAllMedicinskizadaci(){
@@ -158,25 +207,32 @@ export class GetZadaciComponent {
   }
   DodajOpstiZadatak()
   {
-    console.log()
+
     this.dodajOpstiZadatak.zaposlenikPostavioId=this.njegovatelj?.zaposlenikId??null;
     this.dodajOpstiZadatak.korisnikDomaId=this._korisnikDomaId;
-    this.DodajZadatak(this.dodajOpstiZadatak);
-
-
-  }
-  public showEmpty=false;
-  DodajZadatak(data:DodajZadatakRequest){
-    if(data.opis!=="") {
-      this.zadaciService.DodajZadatak(data).subscribe((response:DodajZadatakResponse) => {
-        this.RefreshOpstiZadaci();
-        this.dodajOpstiZadatak.opis="";
-        this.dodajOpstiZadatak.status=false;
-      })
+    if(this.dodajOpstiZadatak.opis!=="") {
+      this.DodajZadatak(this.dodajOpstiZadatak);
     }
     else {
       this.showEmpty=true;
     }
+    this.opstiZadatak= this.zadaci.filter(x=>x.vrstaZadatkaId===this.OpstiZadatakId &&
+      x.korisnikDomaId===this._korisnikDomaId)
+
+  }
+  public showEmpty=false;
+  DodajZadatak(data:DodajZadatakRequest){
+
+      this.zadaciService.DodajZadatak(data).subscribe((response:DodajZadatakResponse) => {
+        this.RefreshOpstiZadaci();
+        this.dodajOpstiZadatak.opis="";
+        this.dodajMedicinskiZadatak.opis="";
+        this.showEmpty=false;
+        this.showEmptyMed=false;
+        this.dodajOpstiZadatak.status=false;
+        this.dodajMedicinskiZadatak.status=false;
+      })
+
   }
 
   UpdateOpstiZadatak(item: GetAllZadatakResponseZadatak) {
@@ -191,17 +247,48 @@ export class GetZadaciComponent {
     this.updateOpstiZadatak.korisnikDomaId=this._korisnikDomaId;
     this.zadaciService.UpdateZadatak(this.updateOpstiZadatak).subscribe(
         () => {
-          console.log("Uspjesan update");
         });
   }
+  UpdateFizijatrijskiZadatak(item: GetAllZadatakResponseZadatak) {
+    this.updateFizijatrijskiZadatak.zadatakId=item.zadatakId;
+    this.updateFizijatrijskiZadatak.opis=item.opis;
+    this.updateFizijatrijskiZadatak.status=item.status;
+    this.updateFizijatrijskiZadatak.intervalZadatkaId=item.intervalZadatkaId;
+    this.updateFizijatrijskiZadatak.zaposlenikPostavioId=item.zaposlenikPostavioId;
+    this.updateFizijatrijskiZadatak.vrstaZadatkaId=item.vrstaZadatkaId;
+    this.updateFizijatrijskiZadatak.datumPostavke=item.datumPostavke;
+    this.updateFizijatrijskiZadatak.zaposlenikEditovaoId=this.getZaposlenik()?.zaposlenikId??null;
+    this.updateFizijatrijskiZadatak.korisnikDomaId=this._korisnikDomaId;
 
+    this.zadaciService.UpdateZadatak(this.updateFizijatrijskiZadatak).subscribe(
+      () => {
+        console.log("Medicinski zadatak updateovan")
+      });
+  }
+
+  UpdateMedicinskiZadatak(item: GetAllZadatakResponseZadatak) {
+    this.updateMedicinskiZadatak.zadatakId=item.zadatakId;
+    this.updateMedicinskiZadatak.opis=item.opis;
+    this.updateMedicinskiZadatak.status=item.status;
+    this.updateMedicinskiZadatak.intervalZadatkaId=item.intervalZadatkaId;
+    this.updateMedicinskiZadatak.zaposlenikPostavioId=item.zaposlenikPostavioId;
+    this.updateMedicinskiZadatak.vrstaZadatkaId=item.vrstaZadatkaId;
+    this.updateMedicinskiZadatak.datumPostavke=item.datumPostavke;
+    this.updateMedicinskiZadatak.zaposlenikEditovaoId=this.getZaposlenik()?.zaposlenikId??null;
+    this.updateMedicinskiZadatak.korisnikDomaId=this._korisnikDomaId;
+    console.log(this.updateMedicinskiZadatak);
+    this.zadaciService.UpdateZadatak(this.updateMedicinskiZadatak).subscribe(
+      () => {
+        console.log("Medicinski zadatak updateovan")
+      });
+  }
   RefreshOpstiZadaci() {
     let todayDate=new Date(this.odabraniDatum);
 
     this.zadaciService.GetAllZadaci().subscribe(x => {
 
       x.zadaci.forEach(y=> {
-        console.log("Danasnji datum", todayDate, "Datum zadatka",y.datumPostavke)
+
       })
       this.zadaci = x.zadaci.filter(zadatak => {
         const datumPostavke = new Date(zadatak.datumPostavke);
@@ -217,12 +304,22 @@ export class GetZadaciComponent {
           return false;
         }
       });
-      this.GetAllOpstiZadaci();
-      console.log("Zadaciii ",this.zadaci)
+      this.opstiZadatak = this.zadaci.filter(zadatak =>
+        zadatak.vrstaZadatkaId === this.OpstiZadatakId &&
+        zadatak.korisnikDomaId === this._korisnikDomaId
+      );
+      this.medicinskiZadatak= this.zadaci.filter(zadatak =>
+        zadatak.vrstaZadatkaId === this.MedicinskiZadatakId &&
+        zadatak.korisnikDomaId === this._korisnikDomaId
+      );
+      this.fizijatrijskiZadatak= this.zadaci.filter(zadatak =>
+        zadatak.vrstaZadatkaId === this.FizijatrijskiZadatakId &&
+        zadatak.korisnikDomaId === this._korisnikDomaId
+      );
     })
   }
    IzbrisiZadatak(item: GetAllZadatakResponseZadatak) {
-      const dialogRef:MatDialogRef<WarningDialogComponent, boolean>=this.openWarningDialog('Da li ste sigurni da želite izbrisati nalog?');
+      const dialogRef:MatDialogRef<WarningDialogComponent, boolean>=this.openWarningDialog('Da li ste sigurni da želite izbrisati zadatak?');
       dialogRef.afterClosed().subscribe(res => {
         if (res) {
           this.zadaciService.IzbrisiZadatak(item).pipe(
@@ -231,7 +328,6 @@ export class GetZadaciComponent {
               })
           ).subscribe(
               request => () => {
-                console.log('Delete successful:', request);
               },
               (error: any) => {
                 console.error('Error:', error);
@@ -245,4 +341,50 @@ export class GetZadaciComponent {
       data: {message},
     });
   };
+  public dodajMedicinskiZadatak:DodajZadatakRequest={
+    opis:"",
+    status:false,
+    datumPostavke:new Date(),
+    zaposlenikPostavioId: 0,
+    zaposlenikEditovaoId:null,
+    intervalZadatkaId:0,
+    vrstaZadatkaId:0,
+    korisnikDomaId:0
+  }
+  showEmptyMed=false;
+  DodajMedicinskiZadatak() {
+    this.dodajMedicinskiZadatak.zaposlenikPostavioId=this.getZaposlenik()?.zaposlenikId??0;
+    this.dodajMedicinskiZadatak.intervalZadatkaId=this.DnevniZadatakId;
+    this.dodajMedicinskiZadatak.vrstaZadatkaId=this.MedicinskiZadatakId;
+    this.dodajMedicinskiZadatak.korisnikDomaId=this._korisnikDomaId;
+    if(this.dodajMedicinskiZadatak.opis!=="") {
+      this.DodajZadatak(this.dodajMedicinskiZadatak);
+    }
+    else{
+      this.showEmptyMed=true;
+    }
+  }
+  public dodajFizijatrijskiZadatak:DodajZadatakRequest={
+    opis:"",
+    status:false,
+    datumPostavke:new Date(),
+    zaposlenikPostavioId: 0,
+    zaposlenikEditovaoId:null,
+    intervalZadatkaId:0,
+    vrstaZadatkaId:0,
+    korisnikDomaId:0
+  }
+  showEmptyFiz=false;
+  DodajFizijatrijskiZadatak() {
+    this.dodajFizijatrijskiZadatak.zaposlenikPostavioId=this.getZaposlenik()?.zaposlenikId??0;
+    this.dodajFizijatrijskiZadatak.intervalZadatkaId=this.DnevniZadatakId;
+    this.dodajFizijatrijskiZadatak.vrstaZadatkaId=this.FizijatrijskiZadatakId;
+    this.dodajFizijatrijskiZadatak.korisnikDomaId=this._korisnikDomaId;
+    if(this.dodajFizijatrijskiZadatak.opis!=="") {
+      this.DodajZadatak(this.dodajFizijatrijskiZadatak);
+    }
+    else{
+      this.showEmptyFiz=true;
+    }
+  }
 }
