@@ -30,8 +30,14 @@ namespace DomZaStaraLicaApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
+                    b.Property<bool>("Is2FOtkljucano")
+                        .HasColumnType("bit");
+
                     b.Property<int>("KorisnickiNalogId")
                         .HasColumnType("int");
+
+                    b.Property<string>("TwoFKey")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ipAdresa")
                         .HasColumnType("nvarchar(max)");
@@ -111,6 +117,13 @@ namespace DomZaStaraLicaApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NalogId"));
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Je2FActive")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("JeAdmin")
                         .HasColumnType("bit");
 
@@ -174,6 +187,27 @@ namespace DomZaStaraLicaApi.Migrations
                     b.ToTable("KorisnikDoma");
                 });
 
+            modelBuilder.Entity("DomZaStaraLicaApi.Data.Models.MyFile", b =>
+                {
+                    b.Property<int>("FileId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FileId"));
+
+                    b.Property<string>("ImeFile")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("MojFile")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("FileId");
+
+                    b.ToTable("MyFiles");
+                });
+
             modelBuilder.Entity("DomZaStaraLicaApi.Data.Models.Opstina", b =>
                 {
                     b.Property<int>("OpstinaID")
@@ -192,6 +226,37 @@ namespace DomZaStaraLicaApi.Migrations
                     b.HasKey("OpstinaID");
 
                     b.ToTable("Opstina");
+                });
+
+            modelBuilder.Entity("DomZaStaraLicaApi.Data.Models.PlanIshrane", b =>
+                {
+                    b.Property<int>("PlanIshraneId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PlanIshraneId"));
+
+                    b.Property<DateTime>("DatumPostavke")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FileId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("KorisnikDomaId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NutricionistaId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PlanIshraneId");
+
+                    b.HasIndex("FileId");
+
+                    b.HasIndex("KorisnikDomaId");
+
+                    b.HasIndex("NutricionistaId");
+
+                    b.ToTable("PlanIshrane");
                 });
 
             modelBuilder.Entity("DomZaStaraLicaApi.Data.Models.PoslovnaPozicija", b =>
@@ -428,6 +493,33 @@ namespace DomZaStaraLicaApi.Migrations
                         .IsRequired();
 
                     b.Navigation("Opstina");
+                });
+
+            modelBuilder.Entity("DomZaStaraLicaApi.Data.Models.PlanIshrane", b =>
+                {
+                    b.HasOne("DomZaStaraLicaApi.Data.Models.MyFile", "File")
+                        .WithMany()
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DomZaStaraLicaApi.Data.Models.KorisnikDoma", "korisnikDoma")
+                        .WithMany()
+                        .HasForeignKey("KorisnikDomaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DomZaStaraLicaApi.Data.Models.Nutricionista", "Nutricionista")
+                        .WithMany()
+                        .HasForeignKey("NutricionistaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("File");
+
+                    b.Navigation("Nutricionista");
+
+                    b.Navigation("korisnikDoma");
                 });
 
             modelBuilder.Entity("DomZaStaraLicaApi.Data.Models.Zadatak", b =>

@@ -11,17 +11,19 @@ import {DodajZadatakRequest} from "../get-zadaci/dodajZadatakRequest";
 import {GetAllNjegovateljaResponseNjegovatelj} from "../njegovatelj/getAllNjegovateljiResponse";
 import {DodajZadatakResponse} from "../get-zadaci/DodajZadatakResponse";
 import {SelectKorisnikeDoma} from "./SelectKorisnikeDoma";
+import {ZadaciService} from "../Services/ZadaciService";
 
 @Component({
   selector: 'app-dodaj-zadatke',
   standalone: true,
     imports: [CommonModule, FormsModule],
+  providers :[ZadaciService],
   templateUrl: './dodaj-zadatke.component.html',
   styleUrl: './dodaj-zadatke.component.css'
 })
 export class DodajZadatkeComponent {
 
-  constructor(public httpClient:HttpClient) {
+  constructor(public httpClient:HttpClient,private zadatakService:ZadaciService) {
   }
 
   public _showKorisnici:SelectKorisnikeDoma[]=[];
@@ -39,6 +41,9 @@ export class DodajZadatkeComponent {
 
   public njegovatelj:GetAllNjegovateljaResponseNjegovatelj|null=null;
   ngOnInit(){
+    this.zadatakService.GetVrsteZadataka().subscribe(response=>{
+      this.dodajOpstiZadatak.vrstaZadatkaId=response.vrsteZadatka.find(x=>x.naziv==="Opsti zadatak")?.vrstaZadatkaId??0;
+    })
   this.GetAllKorisnici();
 
     this.njegovatelj=this.getZaposlenik();
@@ -105,7 +110,7 @@ export class DodajZadatkeComponent {
         );
         this.showErrorNijeIzabrano=false;
         this.showErrorObojeIzabrano=false;
-        this.dodajOpstiZadatak.opis="";
+
         this.dodajOpstiZadatak.status=false;
       }
     }
@@ -120,13 +125,18 @@ export class DodajZadatkeComponent {
     }
   }
   private AddZadatak(korisnik: SelectKorisnikeDoma) {
-    this.dodajOpstiZadatak.zaposlenikPostavioId=this.njegovatelj?.zaposlenikId??0;
-    this.dodajOpstiZadatak.korisnikDomaId=korisnik.korisnikDomaID;
-    this.dodajOpstiZadatak.intervalZadatkaId= this._vrstaDnevnogZadatkaId?1:2;
-    let url: string = MyConfig.adresa_servera + `/dodajZadatak`;
-    this.httpClient.post<DodajZadatakResponse>(url, this.dodajOpstiZadatak).subscribe((response:DodajZadatakResponse) => {
-
+    let intervalZadatkaId:number=0;
+    let intervalZadatka=this.zadatakService.GetIntervalZadataka().subscribe(response=> {
+        intervalZadatkaId = response.intervaliZadatka.find(x =>
+            x.jeDnevni === this._vrstaDnevnogZadatkaId)?.intervalZadatkaId ?? 0;
+        this.dodajOpstiZadatak.zaposlenikPostavioId=this.njegovatelj?.zaposlenikId??0;
+        this.dodajOpstiZadatak.korisnikDomaId=korisnik.korisnikDomaID;
+        this.dodajOpstiZadatak.intervalZadatkaId= intervalZadatkaId;
+        this.zadatakService.DodajZadatak(this.dodajOpstiZadatak).subscribe((response:DodajZadatakResponse) => {
+            this.dodajOpstiZadatak.opis="";
+        })
     })
+
   }
   public isSelected:boolean=true
   SelectAll() {

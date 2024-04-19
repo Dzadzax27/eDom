@@ -86,7 +86,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="exampleModalLiveLabel">Modal title</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" (click)="prikaziDialog=false"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" (click)="Otkazi()"></button>
                 </div>
                 <div class="modal-body">
                     <label>Ukucajte staru lozinku!</label>
@@ -101,11 +101,16 @@
                 </div>
                 <div class="modal-body" *ngIf="showPromijeniLozinku===true">
                     <label>Potvrdite lozinku!</label>
-                    <input type="password" [ngModelOptions]="{standalone:true}" [(ngModel)]="novaLozinkaPotvrda
-"/>
+                    <input type="password" [ngModelOptions]="{standalone:true}" [(ngModel)]="novaLozinkaPotvrda"/>
+                    <div *ngIf="lozicnkeNotMatching">Lozinke se ne podudaraju!</div>
+                </div>
+                <div class="modal-body" *ngIf="showPromijeniNalog ===true">
+                    <label>Ukucajte novo korisnicko ime!</label>
+                    <input [ngModelOptions]="{standalone:true}" [(ngModel)]="novoKorisnickoIme"/>
+                    <label *ngIf="emptyKorIme">Korisnicko ime ne moze biti prazno polje!</label>
                 </div>
                 <div class="modal-footer">
-                    <button type="button"  class="btn btn-secondary" data-bs-dismiss="modal" (click)="prikaziDialog=false">Close</button>
+                    <button type="button"  class="btn btn-secondary" data-bs-dismiss="modal" (click)="Otkazi()">Close</button>
                     <button type="button"  class="btn btn-primary" (click)="ProvjeraIPromjenaLozinke()">Save changes</button>
                 </div>
             </div>
